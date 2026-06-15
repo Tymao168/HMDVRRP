@@ -1,6 +1,6 @@
 import json
 import os
-from instance import instance
+from instance_generation.instance import instance
 import matplotlib.pyplot as plt
 
 
@@ -82,7 +82,8 @@ def instance_save(folder_path, data_instance):
         "robot_unit_consumption": data_instance.robot_unit_consumption
     }
 
-    filename = folder_path + "\\" + data_dict["name"] + ".json"
+    os.makedirs(folder_path, exist_ok=True)
+    filename = os.path.join(folder_path, data_dict["name"] + ".json")
     with open(filename, 'w', encoding='utf-8') as f:
         f.write(json.dumps(data_dict, indent=2))
 

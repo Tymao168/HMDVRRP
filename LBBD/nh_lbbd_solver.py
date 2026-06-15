@@ -118,8 +118,68 @@ def _status_name(status: int) -> str:
         GRB.INFEASIBLE: "INFEASIBLE",
         GRB.INTERRUPTED: "INTERRUPTED",
         GRB.SUBOPTIMAL: "SUBOPTIMAL",
+        GRB.SOLUTION_LIMIT: "SOLUTION_LIMIT",
     }
     return status_map.get(status, str(status))
+
+
+def _basic_infeasibility_reason(context: DepotContext) -> Optional[str]:
+    total_demand = sum(context.q[customer] for customer in context.customers)
+    total_capacity = len(context.trucks) * context.uv
+    if total_demand > total_capacity + 1e-9:
+        return "total_demand_exceeds_total_capacity"
+    if any(context.q[customer] > context.uv + 1e-9 for customer in context.customers):
+        return "customer_demand_exceeds_truck_capacity"
+
+    robot_arc_set = set(context.a_r)
+    for customer in context.robot_only_customers:
+        if context.q[customer] > context.ur + 1e-9:
+            return f"robot_only_customer_{customer}_exceeds_robot_capacity"
+        feasible = False
+        for parking in context.parking:
+            if (parking, customer) not in robot_arc_set or (customer, parking) not in robot_arc_set:
+                continue
+            total_power = (
+                context.rob_power_matrix[parking][customer]
+                + context.rob_power_matrix[customer][parking]
+            )
+            if total_power <= context.robot_ub + 1e-9:
+                feasible = True
+                break
+        if not feasible:
+            return f"robot_only_customer_{customer}_has_no_feasible_parking"
+
+    return None
+
+
+def _screened_depot_result(
+    context: DepotContext,
+    status: int,
+    runtime: float = 0.0,
+) -> DepotSolveResult:
+    return DepotSolveResult(
+        depot=context.depot,
+        status=status,
+        status_name=_status_name(status),
+        objective=None,
+        best_bound=None,
+        mip_gap=None,
+        runtime=runtime,
+        x={},
+        y={},
+        z={},
+        xi={},
+        delta={},
+        subproblem_calls=0,
+        warm_start_used=False,
+        warm_start_objective=None,
+        root_truck_cuts=0,
+        truck_subtour_cuts=0,
+        robot_subtour_cuts=0,
+        no_good_cuts=0,
+        farkas_cuts=0,
+        screening_rejections=0,
+    )
 
 
 def _format_float(value: Optional[float]) -> str:
@@ -275,8 +335,15 @@ def _build_depot_contexts(my_instance) -> List[DepotContext]:
 def _solve_single_depot(
     context: DepotContext,
     feasibility_cut_mode: str,
+    solve_mode: str,
+    heuristic_time_limit: Optional[float],
 ) -> DepotSolveResult:
-    solver = SingleDepotLBBD(context, feasibility_cut_mode=feasibility_cut_mode)
+    solver = SingleDepotLBBD(
+        context,
+        feasibility_cut_mode=feasibility_cut_mode,
+        solve_mode=solve_mode,
+        heuristic_time_limit=heuristic_time_limit,
+    )
     return solver.solve()
 
 
@@ -285,22 +352,46 @@ def _solve_depot_contexts(
     parallel_depots: bool,
     max_parallel_depots: Optional[int],
     feasibility_cut_mode: str,
+    solve_mode: str,
+    heuristic_time_limit: Optional[float],
 ) -> List[DepotSolveResult]:
     if not contexts:
         return []
 
+    screened = {context.depot: _basic_infeasibility_reason(context) for context in contexts}
+    if any(reason is not None for reason in screened.values()):
+        return [
+            _screened_depot_result(
+                context,
+                GRB.INFEASIBLE if screened[context.depot] is not None else GRB.INTERRUPTED,
+            )
+            for context in contexts
+        ]
+
     if not parallel_depots or len(contexts) <= 1:
-        return [_solve_single_depot(context, feasibility_cut_mode) for context in contexts]
+        return [
+            _solve_single_depot(context, feasibility_cut_mode, solve_mode, heuristic_time_limit)
+            for context in contexts
+        ]
 
     worker_cap = max_parallel_depots if max_parallel_depots is not None else (os.cpu_count() or 1)
     max_workers = max(1, min(len(contexts), worker_cap))
     if max_workers <= 1:
-        return [_solve_single_depot(context, feasibility_cut_mode) for context in contexts]
+        return [
+            _solve_single_depot(context, feasibility_cut_mode, solve_mode, heuristic_time_limit)
+            for context in contexts
+        ]
 
     results: List[DepotSolveResult] = []
     with ThreadPoolExecutor(max_workers=max_workers, thread_name_prefix="LBBDDepot") as executor:
         futures = {
-            executor.submit(_solve_single_depot, context, feasibility_cut_mode): context.depot
+            executor.submit(
+                _solve_single_depot,
+                context,
+                feasibility_cut_mode,
+                solve_mode,
+                heuristic_time_limit,
+            ): context.depot
             for context in contexts
         }
         for future in as_completed(futures):
@@ -683,7 +774,13 @@ class TruckFeasibilitySubproblem:
             self.env.dispose()
 
 class SingleDepotLBBD:
-    def __init__(self, context: DepotContext, feasibility_cut_mode: str = "exact"):
+    def __init__(
+        self,
+        context: DepotContext,
+        feasibility_cut_mode: str = "exact",
+        solve_mode: str = "exact",
+        heuristic_time_limit: Optional[float] = None,
+    ):
         self.context = context
         allowed_cut_modes = {"exact", "xyz_only"}
         if feasibility_cut_mode not in allowed_cut_modes:
@@ -691,22 +788,34 @@ class SingleDepotLBBD:
                 f"Unsupported feasibility_cut_mode={feasibility_cut_mode!r}. "
                 f"Choose from {sorted(allowed_cut_modes)}."
             )
+        allowed_solve_modes = {"exact", "heuristic"}
+        if solve_mode not in allowed_solve_modes:
+            raise ValueError(
+                f"Unsupported solve_mode={solve_mode!r}. "
+                f"Choose from {sorted(allowed_solve_modes)}."
+            )
         self.feasibility_cut_mode = feasibility_cut_mode
+        self.solve_mode = solve_mode
+        self.heuristic_time_limit = heuristic_time_limit
         self.env = gp.Env(empty=True)
         self.env.setParam("OutputFlag", 0)
         self.env.start()
 
         self.master = gp.Model(name=f"{context.instance_name}-depot-{context.depot}-LBBD", env=self.env)
-        self.log_file = f"log_{context.instance_name}_d{context.depot}.file"
+        self.log_file = None
         self.master.setParam("TimeLimit", 10800)
         self.master.setParam("Threads", 1)
         self.master.setParam("OutputFlag", False)
-        self.master.setParam("LogFile", self.log_file)
         self.master.setParam("Method", 1)
         self.master.setParam("MIPGap", 0.0001)
         self.master.setParam("IntegralityFocus", 1)
         self.master.setParam("LazyConstraints", 1)
         self.master.setParam("PreCrush", 1)
+        if self.solve_mode == "heuristic":
+            self.master.setParam("MIPFocus", 1)
+            self.master.setParam("Heuristics", 0.95)
+            self.master.setParam("RINS", 20)
+            self.master.setParam("PumpPasses", 10)
 
         self.truck_subtour_cuts = 0
         self.root_truck_cuts = 0
@@ -753,6 +862,93 @@ class SingleDepotLBBD:
             for i, j in self.context.truck_out_arcs[self.context.depot]
             if i == self.context.depot
         )
+
+    def _truck_arc_sort_key(self, arc: Arc) -> Tuple[float, float, float, int]:
+        i, j = arc
+        return (
+            self.context.veh_cost_matrix[i][j],
+            self.context.veh_time_matrix[i][j],
+            self.context.veh_dist_matrix[i][j],
+            j,
+        )
+
+    def _robot_arc_sort_key(self, arc: Arc) -> Tuple[float, float, int]:
+        i, j = arc
+        return (
+            self.context.rob_cost_matrix[i][j],
+            self.context.rob_power_matrix[i][j],
+            j,
+        )
+
+    def _build_reduced_neighborhood(
+        self,
+        truck_neighbor_cap: Optional[int] = None,
+        depot_neighbor_cap: Optional[int] = None,
+        robot_neighbor_cap: Optional[int] = None,
+        anchor_robot_cap: Optional[int] = None,
+    ) -> Tuple[Set[Arc], Set[Arc]]:
+        context = self.context
+        truck_neighbor_cap = min(
+            len(context.nodes) - 1,
+            truck_neighbor_cap if truck_neighbor_cap is not None else max(6, len(context.customers) // 4 + len(context.trucks)),
+        )
+        depot_neighbor_cap = min(
+            len(context.cp_nodes),
+            depot_neighbor_cap if depot_neighbor_cap is not None else max(2 * len(context.trucks) + 4, truck_neighbor_cap),
+        )
+        robot_neighbor_cap = min(
+            max(1, len(context.cp_nodes) - 1),
+            robot_neighbor_cap if robot_neighbor_cap is not None else max(4, len(context.customers) // 6 + 2),
+        )
+        anchor_robot_cap = max(1, anchor_robot_cap if anchor_robot_cap is not None else max(2, robot_neighbor_cap))
+
+        allowed_truck: Set[Arc] = set()
+        for node in context.nodes:
+            outgoing = sorted(context.truck_out_arcs[node], key=self._truck_arc_sort_key)
+            incoming = sorted(context.truck_in_arcs[node], key=self._truck_arc_sort_key)
+            out_cap = depot_neighbor_cap if node == context.depot else truck_neighbor_cap
+            allowed_truck.update(outgoing[:out_cap])
+            allowed_truck.update(incoming[:truck_neighbor_cap])
+
+        for node in context.nodes:
+            if node != context.depot and (node, context.depot) in self.truck_arc_set:
+                allowed_truck.add((node, context.depot))
+
+        allowed_robot: Set[Arc] = set()
+        if context.a_r:
+            for node in context.cp_nodes:
+                outgoing = sorted(context.robot_out_arcs[node], key=self._robot_arc_sort_key)
+                incoming = sorted(context.robot_in_arcs[node], key=self._robot_arc_sort_key)
+                cap = robot_neighbor_cap + (1 if node in context.parking else 0)
+                allowed_robot.update(outgoing[:cap])
+                allowed_robot.update(incoming[:cap])
+
+            for parking in context.parking:
+                outgoing = sorted(context.robot_out_arcs[parking], key=self._robot_arc_sort_key)
+                incoming = sorted(context.robot_in_arcs[parking], key=self._robot_arc_sort_key)
+                allowed_robot.update(outgoing[:anchor_robot_cap])
+                allowed_robot.update(incoming[:anchor_robot_cap])
+
+        return allowed_truck, allowed_robot
+
+    def _apply_branch_priorities(self) -> None:
+        departure_arcs = {
+            (i, j)
+            for i, j in self.context.truck_out_arcs[self.context.depot]
+            if i == self.context.depot
+        }
+        for truck in self.context.trucks:
+            for i, j in self.context.a_v:
+                self.X[i, j, truck].BranchPriority = 80 if (i, j) in departure_arcs else 60
+                self.Y[i, j, truck].BranchPriority = 45
+            for node in self.context.nodes:
+                self.Xi[node, truck].BranchPriority = 25
+                self.Delta[node, truck].BranchPriority = 25
+            for i, j in self.context.a_r:
+                self.Z[i, j, truck].BranchPriority = 10
+        for node in self.context.parking:
+            self.Phi[node].BranchPriority = 1
+            self.Psi[node].BranchPriority = 1
 
     def _route_metrics(self, route: Sequence[int]) -> Optional[Tuple[float, float, float, float]]:
         if not route:
@@ -933,13 +1129,53 @@ class SingleDepotLBBD:
         self.warm_start_used = True
         self.warm_start_objective = best_objective
 
-    def _run_feasibility_warm_phase(self) -> None:
-        if self.warm_start_used:
-            return
-        if len(self.context.customers) < 12 and len(self.context.trucks) < 2:
-            return
+    def apply_external_start(self, depot_result: DepotSolveResult) -> None:
+        for var in self.X.values():
+            var.Start = 0.0
+            var.VarHintVal = 0.0
+        for var in self.Y.values():
+            var.Start = 0.0
+            var.VarHintVal = 0.0
+        for var in self.Z.values():
+            var.Start = 0.0
+            var.VarHintVal = 0.0
+        for var in self.Xi.values():
+            var.Start = 0.0
+            var.VarHintVal = 0.0
+        for var in self.Delta.values():
+            var.Start = 0.0
+            var.VarHintVal = 0.0
+        for node in self.context.parking:
+            self.Phi[node].Start = 1.0
+            self.Phi[node].VarHintVal = 1.0
+            self.Psi[node].Start = 1.0
+            self.Psi[node].VarHintVal = 1.0
 
-        warm_time_limit = min(2.0, float(self.master.Params.TimeLimit))
+        for key, value in depot_result.x.items():
+            if value > INT_TOL and key in self.X:
+                self.X[key].Start = 1.0
+                self.X[key].VarHintVal = 1.0
+        for key, value in depot_result.y.items():
+            if value > INT_TOL and key in self.Y:
+                self.Y[key].Start = 1.0
+                self.Y[key].VarHintVal = 1.0
+        for key, value in depot_result.z.items():
+            if value > INT_TOL and key in self.Z:
+                self.Z[key].Start = 1.0
+                self.Z[key].VarHintVal = 1.0
+        for key, value in depot_result.xi.items():
+            if value > INT_TOL and key in self.Xi:
+                self.Xi[key].Start = 1.0
+                self.Xi[key].VarHintVal = 1.0
+        for key, value in depot_result.delta.items():
+            if value > INT_TOL and key in self.Delta:
+                self.Delta[key].Start = 1.0
+                self.Delta[key].VarHintVal = 1.0
+
+        self.warm_start_used = depot_result.objective is not None
+        self.warm_start_objective = depot_result.objective
+
+    def _run_warm_optimize(self, warm_time_limit: float, heuristics: float, no_rel_heur_time: float) -> None:
         if warm_time_limit <= 0.0:
             return
 
@@ -954,8 +1190,8 @@ class SingleDepotLBBD:
         self.master.setParam('TimeLimit', warm_time_limit)
         self.master.setParam('SolutionLimit', 1)
         self.master.setParam('MIPFocus', 1)
-        self.master.setParam('Heuristics', 0.8)
-        self.master.setParam('NoRelHeurTime', min(1.0, warm_time_limit))
+        self.master.setParam('Heuristics', heuristics)
+        self.master.setParam('NoRelHeurTime', min(no_rel_heur_time, warm_time_limit))
         self.master.optimize(self._callback)
 
         if self.master.SolCount > 0:
@@ -969,6 +1205,259 @@ class SingleDepotLBBD:
         self.master.setParam('MIPFocus', original_params['MIPFocus'])
         self.master.setParam('Heuristics', original_params['Heuristics'])
         self.master.setParam('NoRelHeurTime', original_params['NoRelHeurTime'])
+
+    def _run_kernel_stage(
+        self,
+        allowed_truck: Set[Arc],
+        allowed_robot: Set[Arc],
+        *,
+        allow_y: bool,
+        allow_robot: bool,
+        allow_anchor: bool,
+        time_limit: float,
+        heuristics: float,
+        no_rel_heur_time: float,
+    ) -> None:
+        if self.warm_start_used or not allowed_truck:
+            return
+
+        bound_changes: List[Tuple[gp.Var, float]] = []
+        for truck in self.context.trucks:
+            for i, j in self.context.a_v:
+                if (i, j) not in allowed_truck:
+                    for var in (self.X[i, j, truck], self.Y[i, j, truck]):
+                        if var.UB > 0.5:
+                            bound_changes.append((var, var.UB))
+                            var.UB = 0.0
+                elif not allow_y and self.Y[i, j, truck].UB > 0.5:
+                    bound_changes.append((self.Y[i, j, truck], self.Y[i, j, truck].UB))
+                    self.Y[i, j, truck].UB = 0.0
+
+            for i, j in self.context.a_r:
+                var = self.Z[i, j, truck]
+                if (not allow_robot or (i, j) not in allowed_robot) and var.UB > 0.5:
+                    bound_changes.append((var, var.UB))
+                    var.UB = 0.0
+
+            if not allow_anchor:
+                for node in self.context.nodes:
+                    for var in (self.Xi[node, truck], self.Delta[node, truck]):
+                        if var.UB > 0.5:
+                            bound_changes.append((var, var.UB))
+                            var.UB = 0.0
+
+        if not bound_changes:
+            return
+
+        self.master.update()
+        try:
+            self._run_warm_optimize(time_limit, heuristics=heuristics, no_rel_heur_time=no_rel_heur_time)
+        finally:
+            for var, ub in bound_changes:
+                var.UB = ub
+            self.master.update()
+
+    def _run_truck_only_reduced_warm_phase(self) -> None:
+        if self.warm_start_used:
+            return
+        if len(self.context.customers) < 12 and len(self.context.trucks) < 2:
+            return
+
+        stages = [
+            self._build_reduced_neighborhood(
+                truck_neighbor_cap=max(3, len(self.context.trucks) + 1),
+                depot_neighbor_cap=max(2 * len(self.context.trucks) + 1, 4),
+                robot_neighbor_cap=1,
+                anchor_robot_cap=1,
+            ),
+            self._build_reduced_neighborhood(
+                truck_neighbor_cap=max(4, len(self.context.customers) // 8 + len(self.context.trucks) + 1),
+                depot_neighbor_cap=max(2 * len(self.context.trucks) + 2, 5),
+                robot_neighbor_cap=1,
+                anchor_robot_cap=1,
+            ),
+            self._build_reduced_neighborhood(
+                truck_neighbor_cap=max(5, len(self.context.customers) // 6 + len(self.context.trucks) + 1),
+                depot_neighbor_cap=max(2 * len(self.context.trucks) + 3, 6),
+                robot_neighbor_cap=1,
+                anchor_robot_cap=1,
+            ),
+        ]
+
+        for idx, (allowed_truck, _) in enumerate(stages):
+            self._run_kernel_stage(
+                allowed_truck,
+                set(),
+                allow_y=False,
+                allow_robot=False,
+                allow_anchor=False,
+                time_limit=min(4.5, 2.5 + idx),
+                heuristics=0.99,
+                no_rel_heur_time=1.5,
+            )
+            if self.warm_start_used:
+                return
+
+    def _run_reduced_neighborhood_warm_phase(self) -> None:
+        if self.warm_start_used:
+            return
+        if len(self.context.customers) < 12 and len(self.context.trucks) < 2:
+            return
+
+        stages = [
+            self._build_reduced_neighborhood(
+                truck_neighbor_cap=max(6, len(self.context.customers) // 5 + len(self.context.trucks)),
+                depot_neighbor_cap=max(2 * len(self.context.trucks) + 4, 7),
+                robot_neighbor_cap=max(2, len(self.context.customers) // 12 + 1),
+                anchor_robot_cap=2,
+            ),
+            self._build_reduced_neighborhood(
+                truck_neighbor_cap=max(7, len(self.context.customers) // 4 + len(self.context.trucks)),
+                depot_neighbor_cap=max(2 * len(self.context.trucks) + 5, 8),
+                robot_neighbor_cap=max(3, len(self.context.customers) // 10 + 1),
+                anchor_robot_cap=3,
+            ),
+        ]
+
+        for idx, (allowed_truck, allowed_robot) in enumerate(stages):
+            self._run_kernel_stage(
+                allowed_truck,
+                allowed_robot,
+                allow_y=True,
+                allow_robot=True,
+                allow_anchor=True,
+                time_limit=min(7.0, 4.0 + 2.0 * idx),
+                heuristics=0.96,
+                no_rel_heur_time=2.0,
+            )
+            if self.warm_start_used:
+                return
+
+    def _run_feasibility_warm_phase(self) -> None:
+        if self.warm_start_used:
+            return
+        if len(self.context.customers) < 12 and len(self.context.trucks) < 2:
+            return
+
+        warm_time_limit = min(2.0, float(self.master.Params.TimeLimit))
+        self._run_warm_optimize(warm_time_limit, heuristics=0.8, no_rel_heur_time=1.0)
+
+    def _run_large_instance_heuristic_phase(self) -> None:
+        if self.warm_start_used:
+            return
+        if len(self.context.customers) < 12 and len(self.context.trucks) < 2:
+            return
+
+        stage_specs = [
+            dict(
+                truck_neighbor_cap=max(4, len(self.context.trucks) + 2),
+                depot_neighbor_cap=max(2 * len(self.context.trucks) + 2, 6),
+                robot_neighbor_cap=1,
+                anchor_robot_cap=1,
+                allow_y=True,
+                allow_robot=False,
+                allow_anchor=False,
+                time_limit=8.0,
+                heuristics=0.99,
+                no_rel_heur_time=2.0,
+            ),
+            dict(
+                truck_neighbor_cap=max(5, len(self.context.customers) // 7 + len(self.context.trucks) + 1),
+                depot_neighbor_cap=max(2 * len(self.context.trucks) + 3, 7),
+                robot_neighbor_cap=1,
+                anchor_robot_cap=1,
+                allow_y=True,
+                allow_robot=False,
+                allow_anchor=True,
+                time_limit=10.0,
+                heuristics=0.99,
+                no_rel_heur_time=2.5,
+            ),
+            dict(
+                truck_neighbor_cap=max(6, len(self.context.customers) // 6 + len(self.context.trucks) + 1),
+                depot_neighbor_cap=max(2 * len(self.context.trucks) + 4, 8),
+                robot_neighbor_cap=max(2, len(self.context.customers) // 12 + 1),
+                anchor_robot_cap=2,
+                allow_y=True,
+                allow_robot=True,
+                allow_anchor=True,
+                time_limit=12.0,
+                heuristics=0.98,
+                no_rel_heur_time=3.0,
+            ),
+            dict(
+                truck_neighbor_cap=max(7, len(self.context.customers) // 5 + len(self.context.trucks) + 1),
+                depot_neighbor_cap=max(2 * len(self.context.trucks) + 5, 9),
+                robot_neighbor_cap=max(3, len(self.context.customers) // 10 + 1),
+                anchor_robot_cap=3,
+                allow_y=True,
+                allow_robot=True,
+                allow_anchor=True,
+                time_limit=15.0,
+                heuristics=0.97,
+                no_rel_heur_time=4.0,
+            ),
+        ]
+
+        for spec in stage_specs:
+            allowed_truck, allowed_robot = self._build_reduced_neighborhood(
+                truck_neighbor_cap=spec['truck_neighbor_cap'],
+                depot_neighbor_cap=spec['depot_neighbor_cap'],
+                robot_neighbor_cap=spec['robot_neighbor_cap'],
+                anchor_robot_cap=spec['anchor_robot_cap'],
+            )
+            self._run_kernel_stage(
+                allowed_truck,
+                allowed_robot,
+                allow_y=spec['allow_y'],
+                allow_robot=spec['allow_robot'],
+                allow_anchor=spec['allow_anchor'],
+                time_limit=spec['time_limit'],
+                heuristics=spec['heuristics'],
+                no_rel_heur_time=spec['no_rel_heur_time'],
+            )
+            if self.warm_start_used:
+                return
+
+    def _run_first_incumbent_phase(self) -> None:
+        original_params = {
+            'TimeLimit': self.master.Params.TimeLimit,
+            'SolutionLimit': self.master.Params.SolutionLimit,
+            'MIPFocus': self.master.Params.MIPFocus,
+            'Heuristics': self.master.Params.Heuristics,
+            'NoRelHeurTime': self.master.Params.NoRelHeurTime,
+            'RINS': self.master.Params.RINS,
+            'PumpPasses': self.master.Params.PumpPasses,
+        }
+
+        search_limit = original_params['TimeLimit']
+        if self.heuristic_time_limit is not None:
+            search_limit = min(search_limit, float(self.heuristic_time_limit))
+        else:
+            search_limit = min(search_limit, 600.0)
+
+        self.master.setParam('TimeLimit', search_limit)
+        self.master.setParam('SolutionLimit', 1)
+        self.master.setParam('MIPFocus', 1)
+        self.master.setParam('Heuristics', max(0.95, original_params['Heuristics']))
+        self.master.setParam('NoRelHeurTime', min(30.0, search_limit))
+        self.master.setParam('RINS', 20)
+        self.master.setParam('PumpPasses', 10)
+        self.master.optimize(self._callback)
+
+        if self.master.SolCount > 0:
+            for var in self.master.getVars():
+                var.Start = var.X
+            self.warm_start_used = True
+            self.warm_start_objective = self.master.ObjVal
+
+        self.master.setParam('TimeLimit', original_params['TimeLimit'])
+        self.master.setParam('SolutionLimit', original_params['SolutionLimit'])
+        self.master.setParam('MIPFocus', original_params['MIPFocus'])
+        self.master.setParam('Heuristics', original_params['Heuristics'])
+        self.master.setParam('NoRelHeurTime', original_params['NoRelHeurTime'])
+        self.master.setParam('RINS', original_params['RINS'])
+        self.master.setParam('PumpPasses', original_params['PumpPasses'])
 
     def _build_master(self) -> None:
         context = self.context
@@ -991,6 +1480,7 @@ class SingleDepotLBBD:
         self.Delta = self.master.addVars(local_node_keys, vtype=GRB.BINARY, name="delta")
         self.Phi = self.master.addVars(context.parking, vtype=GRB.BINARY, name="phi")
         self.Psi = self.master.addVars(context.parking, vtype=GRB.BINARY, name="psi")
+        self._apply_branch_priorities()
 
         self.x_vars_by_truck: Dict[int, List[gp.Var]] = {}
         self.y_vars_by_truck: Dict[int, List[gp.Var]] = {}
@@ -1730,8 +2220,15 @@ class SingleDepotLBBD:
 
     def solve(self) -> DepotSolveResult:
         try:
+            self._run_truck_only_reduced_warm_phase()
+            self._run_reduced_neighborhood_warm_phase()
+            if self.solve_mode == "heuristic":
+                self._run_large_instance_heuristic_phase()
             self._run_feasibility_warm_phase()
-            self.master.optimize(self._callback)
+            if self.solve_mode == "heuristic":
+                self._run_first_incumbent_phase()
+            else:
+                self.master.optimize(self._callback)
 
             if self.master.Status == GRB.INFEASIBLE:
                 self.master.computeIIS()
@@ -1873,18 +2370,28 @@ def gurobiSolver(
     parallel_depots: bool = True,
     max_parallel_depots: Optional[int] = None,
     feasibility_cut_mode: str = "exact",
+    solve_mode: str = "exact",
+    heuristic_time_limit: Optional[float] = None,
+    plot_solution: bool = True,
 ):
     with open("log.file", "a", encoding="utf-8") as log_file:
         log_file.write("---------New LBBD model----------\n")
         log_file.write("Model Name: " + myInstance.name + "\n")
 
     contexts = _build_depot_contexts(myInstance)
-    results = _solve_depot_contexts(contexts, parallel_depots, max_parallel_depots, feasibility_cut_mode)
+    results = _solve_depot_contexts(
+        contexts,
+        parallel_depots,
+        max_parallel_depots,
+        feasibility_cut_mode,
+        solve_mode,
+        heuristic_time_limit,
+    )
 
     _print_solution_summary(results)
 
     has_incumbent_for_all = all(result.objective is not None for result in results)
-    if has_incumbent_for_all:
+    if has_incumbent_for_all and plot_solution:
         _plot_solution(myInstance, results)
 
     total_objective = sum(result.objective for result in results if result.objective is not None)
@@ -1893,6 +2400,8 @@ def gurobiSolver(
         if any(result.status == GRB.INFEASIBLE for result in results)
         else GRB.OPTIMAL
         if all(result.status == GRB.OPTIMAL for result in results)
+        else GRB.SUBOPTIMAL
+        if all(result.objective is not None for result in results)
         else GRB.TIME_LIMIT
     )
 
