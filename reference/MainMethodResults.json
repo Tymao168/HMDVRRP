@@ -1,0 +1,352 @@
+[
+  {
+    "Instance": "E2-3-1",
+    "Instance_file": "M-d2-n3-k1-p2.json",
+    "Method": "LBBD",
+    "Status": "OPTIMAL",
+    "Baseline_obj": 498.36,
+    "Total_obj": 835.38,
+    "Obj_change_pct": "+67.63%",
+    "Time_s": 0.02
+  },
+  {
+    "Instance": "E2-4-1",
+    "Instance_file": "M-d2-n4-k1-p2.json",
+    "Method": "LBBD",
+    "Status": "OPTIMAL",
+    "Baseline_obj": 528.32,
+    "Total_obj": 865.96,
+    "Obj_change_pct": "+63.91%",
+    "Time_s": 0.07
+  },
+  {
+    "Instance": "E2-5-1",
+    "Instance_file": "M-d2-n5-k1-p2.json",
+    "Method": "LBBD",
+    "Status": "OPTIMAL",
+    "Baseline_obj": 854.74,
+    "Total_obj": 1009.56,
+    "Obj_change_pct": "+18.11%",
+    "Time_s": 0.08
+  },
+  {
+    "Instance": "E2-6-1",
+    "Instance_file": "M-d2-n6-k1-p2.json",
+    "Method": "LBBD",
+    "Status": "OPTIMAL",
+    "Baseline_obj": 862.96,
+    "Total_obj": 1072.6,
+    "Obj_change_pct": "+24.29%",
+    "Time_s": 0.19
+  },
+  {
+    "Instance": "E2-7-1",
+    "Instance_file": "M-d2-n7-k1-p2.json",
+    "Method": "LBBD",
+    "Status": "OPTIMAL",
+    "Baseline_obj": 981.94,
+    "Total_obj": 1200.98,
+    "Obj_change_pct": "+22.31%",
+    "Time_s": 0.36
+  },
+  {
+    "Instance": "E2-8-1",
+    "Instance_file": "M-d2-n8-k1-p2.json",
+    "Method": "LBBD",
+    "Status": "OPTIMAL",
+    "Baseline_obj": 1010.82,
+    "Total_obj": 1222.16,
+    "Obj_change_pct": "+20.91%",
+    "Time_s": 1.16
+  },
+  {
+    "Instance": "E2-9-1",
+    "Instance_file": "M-d2-n9-k1-p2.json",
+    "Method": "LBBD",
+    "Status": "OPTIMAL",
+    "Baseline_obj": 1058.68,
+    "Total_obj": 1282.58,
+    "Obj_change_pct": "+21.15%",
+    "Time_s": 34.77
+  },
+  {
+    "Instance": "E2-10-1",
+    "Instance_file": "M-d2-n10-k1-p2.json",
+    "Method": "LBBD",
+    "Status": "OPTIMAL",
+    "Baseline_obj": 1075.49,
+    "Total_obj": 1254.22,
+    "Obj_change_pct": "+16.62%",
+    "Time_s": 1.84
+  },
+  {
+    "Instance": "E3-3-1",
+    "Instance_file": "M-d3-n3-k1-p2.json",
+    "Method": "LBBD",
+    "Status": "OPTIMAL",
+    "Baseline_obj": 635.4,
+    "Total_obj": 1013.52,
+    "Obj_change_pct": "+59.51%",
+    "Time_s": 0.02
+  },
+  {
+    "Instance": "E3-4-1",
+    "Instance_file": "M-d3-n4-k1-p2.json",
+    "Method": "LBBD",
+    "Status": "OPTIMAL",
+    "Baseline_obj": 844.56,
+    "Total_obj": 1070.42,
+    "Obj_change_pct": "+26.74%",
+    "Time_s": 0.12
+  },
+  {
+    "Instance": "E3-5-1",
+    "Instance_file": "M-d3-n5-k1-p2.json",
+    "Method": "LBBD",
+    "Status": "OPTIMAL",
+    "Baseline_obj": 1015.58,
+    "Total_obj": 1303.42,
+    "Obj_change_pct": "+28.34%",
+    "Time_s": 0.26
+  },
+  {
+    "Instance": "E3-6-1",
+    "Instance_file": "M-d3-n6-k1-p2.json",
+    "Method": "LBBD",
+    "Status": "OPTIMAL",
+    "Baseline_obj": 1130.6,
+    "Total_obj": 1646.62,
+    "Obj_change_pct": "+45.64%",
+    "Time_s": 0.66
+  },
+  {
+    "Instance": "E4-3-1",
+    "Instance_file": "M-d4-n3-k1-p2.json",
+    "Method": "LBBD",
+    "Status": "OPTIMAL",
+    "Baseline_obj": 907.54,
+    "Total_obj": 1171.7,
+    "Obj_change_pct": "+29.11%",
+    "Time_s": 0.06
+  },
+  {
+    "Instance": "E4-4-1",
+    "Instance_file": "M-d4-n4-k1-p2.json",
+    "Method": "LBBD",
+    "Status": "OPTIMAL",
+    "Baseline_obj": 1105.56,
+    "Total_obj": 1627.26,
+    "Obj_change_pct": "+47.19%",
+    "Time_s": 0.13
+  },
+  {
+    "Instance": "E4-5-1",
+    "Instance_file": "M-d4-n5-k1-p2.json",
+    "Method": "LBBD",
+    "Status": "OPTIMAL",
+    "Baseline_obj": 1231.72,
+    "Total_obj": 1883.62,
+    "Obj_change_pct": "+52.93%",
+    "Time_s": 0.23
+  },
+  {
+    "Instance": "E2-12-1",
+    "Instance_file": "M-d2-n12-k1-p2.json",
+    "Method": "LBBD",
+    "Status": "INFEASIBLE",
+    "Baseline_obj": 1157.86,
+    "Total_obj": "-",
+    "Obj_change_pct": "-",
+    "Time_s": 67.74
+  },
+  {
+    "Instance": "E2-16-2",
+    "Instance_file": "M-d2-n16-k2-p2.json",
+    "Method": "Heuristic",
+    "Status": "SUBOPTIMAL",
+    "Baseline_obj": 1289.78,
+    "Total_obj": 1911.6,
+    "Obj_change_pct": "+48.21%",
+    "Time_s": 2143.5
+  },
+  {
+    "Instance": "E2-20-2",
+    "Instance_file": "M-d2-n20-k2-p2.json",
+    "Method": "Heuristic",
+    "Status": "SUBOPTIMAL",
+    "Baseline_obj": 1478.22,
+    "Total_obj": 1989.04,
+    "Obj_change_pct": "+34.56%",
+    "Time_s": 2392.65
+  },
+  {
+    "Instance": "E2-30-2",
+    "Instance_file": "M-d2-n30-k2-p2.json",
+    "Method": "Heuristic",
+    "Status": "INFEASIBLE",
+    "Baseline_obj": 1854.58,
+    "Total_obj": "-",
+    "Obj_change_pct": "-",
+    "Time_s": 0.01
+  },
+  {
+    "Instance": "E2-40-3",
+    "Instance_file": "M-d2-n40-k3-p2.json",
+    "Method": "Heuristic",
+    "Status": "SUBOPTIMAL",
+    "Baseline_obj": 2483.7,
+    "Total_obj": 2905.2,
+    "Obj_change_pct": "+16.97%",
+    "Time_s": 3619.01
+  },
+  {
+    "Instance": "E2-50-4",
+    "Instance_file": "M-d2-n50-k4-p2.json",
+    "Method": "Heuristic",
+    "Status": "SUBOPTIMAL",
+    "Baseline_obj": 2598.62,
+    "Total_obj": 3466.47,
+    "Obj_change_pct": "+33.40%",
+    "Time_s": 3649.59
+  },
+  {
+    "Instance": "E3-8-1",
+    "Instance_file": "M-d3-n8-k1-p2.json",
+    "Method": "LBBD",
+    "Status": "INFEASIBLE",
+    "Baseline_obj": 1201.19,
+    "Total_obj": "-",
+    "Obj_change_pct": "-",
+    "Time_s": 6.37
+  },
+  {
+    "Instance": "E3-12-1",
+    "Instance_file": "M-d3-n12-k1-p2.json",
+    "Method": "LBBD",
+    "Status": "INFEASIBLE",
+    "Baseline_obj": 1526.04,
+    "Total_obj": "-",
+    "Obj_change_pct": "-",
+    "Time_s": 298.76
+  },
+  {
+    "Instance": "E3-15-1",
+    "Instance_file": "M-d3-n15-k1-p2.json",
+    "Method": "LBBD",
+    "Status": "INFEASIBLE",
+    "Baseline_obj": 1630.1,
+    "Total_obj": "-",
+    "Obj_change_pct": "-",
+    "Time_s": 0.01
+  },
+  {
+    "Instance": "E3-20-2",
+    "Instance_file": "M-d3-n20-k2-p2.json",
+    "Method": "Heuristic",
+    "Status": "SUBOPTIMAL",
+    "Baseline_obj": 1845.98,
+    "Total_obj": 2918.89,
+    "Obj_change_pct": "+58.12%",
+    "Time_s": 4099.09
+  },
+  {
+    "Instance": "E3-30-2",
+    "Instance_file": "M-d3-n30-k2-p2.json",
+    "Method": "Heuristic",
+    "Status": "INFEASIBLE",
+    "Baseline_obj": 2473.3,
+    "Total_obj": "-",
+    "Obj_change_pct": "-",
+    "Time_s": 0.12
+  },
+  {
+    "Instance": "E4-6-1",
+    "Instance_file": "M-d4-n6-k1-p2.json",
+    "Method": "LBBD",
+    "Status": "OPTIMAL",
+    "Baseline_obj": 1254.9,
+    "Total_obj": 2066.66,
+    "Obj_change_pct": "+64.69%",
+    "Time_s": 0.41
+  },
+  {
+    "Instance": "E4-10-1",
+    "Instance_file": "M-d4-n10-k1-p2.json",
+    "Method": "LBBD",
+    "Status": "OPTIMAL",
+    "Baseline_obj": 1585.89,
+    "Total_obj": 2474.11,
+    "Obj_change_pct": "+56.01%",
+    "Time_s": 10.78
+  },
+  {
+    "Instance": "E4-15-1",
+    "Instance_file": "M-d4-n15-k1-p2.json",
+    "Method": "LBBD",
+    "Status": "INFEASIBLE",
+    "Baseline_obj": 1846.82,
+    "Total_obj": "-",
+    "Obj_change_pct": "-",
+    "Time_s": 0.01
+  },
+  {
+    "Instance": "E4-20-2",
+    "Instance_file": "M-d4-n20-k2-p2.json",
+    "Method": "Heuristic",
+    "Status": "SUBOPTIMAL",
+    "Baseline_obj": 2396.48,
+    "Total_obj": 3736.41,
+    "Obj_change_pct": "+55.91%",
+    "Time_s": 6415.9
+  },
+  {
+    "Instance": "E4-25-2",
+    "Instance_file": "M-d4-n25-k2-p2.json",
+    "Method": "Heuristic",
+    "Status": "SUBOPTIMAL",
+    "Baseline_obj": 2787.79,
+    "Total_obj": 4248.79,
+    "Obj_change_pct": "+52.41%",
+    "Time_s": 7047.91
+  },
+  {
+    "Instance": "E5-5-1",
+    "Instance_file": "M-d5-n5-k1-p2.json",
+    "Method": "LBBD",
+    "Status": "OPTIMAL",
+    "Baseline_obj": 1487.76,
+    "Total_obj": 2460.06,
+    "Obj_change_pct": "+65.35%",
+    "Time_s": 0.34
+  },
+  {
+    "Instance": "E5-10-1",
+    "Instance_file": "M-d5-n10-k1-p2.json",
+    "Method": "LBBD",
+    "Status": "INFEASIBLE",
+    "Baseline_obj": 1866.8,
+    "Total_obj": "-",
+    "Obj_change_pct": "-",
+    "Time_s": 10.13
+  },
+  {
+    "Instance": "E5-15-1",
+    "Instance_file": "M-d5-n15-k1-p2.json",
+    "Method": "LBBD",
+    "Status": "INFEASIBLE",
+    "Baseline_obj": 2364.21,
+    "Total_obj": "-",
+    "Obj_change_pct": "-",
+    "Time_s": 0.06
+  },
+  {
+    "Instance": "E5-20-2",
+    "Instance_file": "M-d5-n20-k2-p2.json",
+    "Method": "Heuristic",
+    "Status": "SUBOPTIMAL",
+    "Baseline_obj": 2885.81,
+    "Total_obj": 4996.18,
+    "Obj_change_pct": "+73.13%",
+    "Time_s": 7534.46
+  }
+]
