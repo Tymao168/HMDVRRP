@@ -1,0 +1,162 @@
+[
+  {
+    "Instance": "E2-3-1",
+    "Instance_file": "M-d2-n3-k1-p2.json",
+    "Method": "LBBD",
+    "Status": "OPTIMAL",
+    "Baseline_obj": 498.36,
+    "Total_obj": 835.38,
+    "Obj_change_pct": "+67.63%",
+    "Time_s": 0.21
+  },
+  {
+    "Instance": "E2-4-1",
+    "Instance_file": "M-d2-n4-k1-p2.json",
+    "Method": "LBBD",
+    "Status": "OPTIMAL",
+    "Baseline_obj": 528.32,
+    "Total_obj": 865.96,
+    "Obj_change_pct": "+63.91%",
+    "Time_s": 0.3
+  },
+  {
+    "Instance": "E2-5-1",
+    "Instance_file": "M-d2-n5-k1-p2.json",
+    "Method": "LBBD",
+    "Status": "OPTIMAL",
+    "Baseline_obj": 854.74,
+    "Total_obj": 1009.56,
+    "Obj_change_pct": "+18.11%",
+    "Time_s": 0.28
+  },
+  {
+    "Instance": "E2-6-1",
+    "Instance_file": "M-d2-n6-k1-p2.json",
+    "Method": "LBBD",
+    "Status": "OPTIMAL",
+    "Baseline_obj": 862.96,
+    "Total_obj": 1072.6,
+    "Obj_change_pct": "+24.29%",
+    "Time_s": 0.31
+  },
+  {
+    "Instance": "E2-7-1",
+    "Instance_file": "M-d2-n7-k1-p2.json",
+    "Method": "LBBD",
+    "Status": "OPTIMAL",
+    "Baseline_obj": 981.94,
+    "Total_obj": 1200.98,
+    "Obj_change_pct": "+22.31%",
+    "Time_s": 0.5
+  },
+  {
+    "Instance": "E2-8-1",
+    "Instance_file": "M-d2-n8-k1-p2.json",
+    "Method": "LBBD",
+    "Status": "OPTIMAL",
+    "Baseline_obj": 1010.82,
+    "Total_obj": 1222.16,
+    "Obj_change_pct": "+20.91%",
+    "Time_s": 1.28
+  },
+  {
+    "Instance": "E2-9-1",
+    "Instance_file": "M-d2-n9-k1-p2.json",
+    "Method": "LBBD",
+    "Status": "OPTIMAL",
+    "Baseline_obj": 1058.68,
+    "Total_obj": 1282.58,
+    "Obj_change_pct": "+21.15%",
+    "Time_s": 31.5
+  },
+  {
+    "Instance": "E2-10-1",
+    "Instance_file": "M-d2-n10-k1-p2.json",
+    "Method": "LBBD",
+    "Status": "OPTIMAL",
+    "Baseline_obj": 1075.49,
+    "Total_obj": 1254.22,
+    "Obj_change_pct": "+16.62%",
+    "Time_s": 2.02
+  },
+  {
+    "Instance": "E3-3-1",
+    "Instance_file": "M-d3-n3-k1-p2.json",
+    "Method": "LBBD",
+    "Status": "OPTIMAL",
+    "Baseline_obj": 635.4,
+    "Total_obj": 1013.52,
+    "Obj_change_pct": "+59.51%",
+    "Time_s": 0.17
+  },
+  {
+    "Instance": "E3-4-1",
+    "Instance_file": "M-d3-n4-k1-p2.json",
+    "Method": "LBBD",
+    "Status": "OPTIMAL",
+    "Baseline_obj": 844.56,
+    "Total_obj": 1070.42,
+    "Obj_change_pct": "+26.74%",
+    "Time_s": 0.28
+  },
+  {
+    "Instance": "E3-5-1",
+    "Instance_file": "M-d3-n5-k1-p2.json",
+    "Method": "LBBD",
+    "Status": "OPTIMAL",
+    "Baseline_obj": 1015.58,
+    "Total_obj": 1303.42,
+    "Obj_change_pct": "+28.34%",
+    "Time_s": 0.42
+  },
+  {
+    "Instance": "E3-6-1",
+    "Instance_file": "M-d3-n6-k1-p2.json",
+    "Method": "LBBD",
+    "Status": "OPTIMAL",
+    "Baseline_obj": 1130.6,
+    "Total_obj": 1646.62,
+    "Obj_change_pct": "+45.64%",
+    "Time_s": 0.82
+  },
+  {
+    "Instance": "E4-3-1",
+    "Instance_file": "M-d4-n3-k1-p2.json",
+    "Method": "LBBD",
+    "Status": "OPTIMAL",
+    "Baseline_obj": 907.54,
+    "Total_obj": 1171.7,
+    "Obj_change_pct": "+29.11%",
+    "Time_s": 0.19
+  },
+  {
+    "Instance": "E4-4-1",
+    "Instance_file": "M-d4-n4-k1-p2.json",
+    "Method": "LBBD",
+    "Status": "OPTIMAL",
+    "Baseline_obj": 1105.56,
+    "Total_obj": 1627.26,
+    "Obj_change_pct": "+47.19%",
+    "Time_s": 0.27
+  },
+  {
+    "Instance": "E4-5-1",
+    "Instance_file": "M-d4-n5-k1-p2.json",
+    "Method": "LBBD",
+    "Status": "OPTIMAL",
+    "Baseline_obj": 1231.72,
+    "Total_obj": 1883.62,
+    "Obj_change_pct": "+52.93%",
+    "Time_s": 0.36
+  },
+  {
+    "Instance": "E2-12-1",
+    "Instance_file": "M-d2-n12-k1-p2.json",
+    "Method": "Heuristic",
+    "Status": "TIME_LIMIT",
+    "Baseline_obj": 1157.86,
+    "Total_obj": "-",
+    "Obj_change_pct": "-",
+    "Time_s": 5.13
+  }
+]

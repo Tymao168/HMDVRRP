@@ -1,0 +1,22 @@
+[
+  {
+    "Instance": "E2-3-1",
+    "Instance_file": "M-d2-n3-k1-p2.json",
+    "Method": "LBBD",
+    "Status": "OPTIMAL",
+    "Baseline_obj": 498.36,
+    "Total_obj": 835.38,
+    "Obj_change_pct": "+67.63%",
+    "Time_s": 0.02
+  },
+  {
+    "Instance": "E2-4-1",
+    "Instance_file": "M-d2-n4-k1-p2.json",
+    "Method": "LBBD",
+    "Status": "OPTIMAL",
+    "Baseline_obj": 528.32,
+    "Total_obj": 865.96,
+    "Obj_change_pct": "+63.91%",
+    "Time_s": 0.07
+  }
+]

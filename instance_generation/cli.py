@@ -3,9 +3,8 @@
 import argparse
 from pathlib import Path
 
-from utils import instance_save, parse_string
-
 from .instanceGenerate import generate_instance
+from .io import instance_save, parse_string
 
 
 def parse_args() -> argparse.Namespace:

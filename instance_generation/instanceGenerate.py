@@ -1,8 +1,24 @@
 import math
 import random as rn
 import matplotlib.pyplot as plt
-from utils import transpose_dict
 from .instance import instance
+
+
+def transpose_dict(dictionary):
+    transposed_dict = {}
+    for key, value in dictionary.items():
+        if isinstance(value, list):
+            for item in value:
+                if item not in transposed_dict:
+                    transposed_dict[item] = key
+                else:
+                    transposed_dict[item].append(key)
+        else:
+            if value not in transposed_dict:
+                transposed_dict[value] = key
+            else:
+                transposed_dict[value].append(key)
+    return transposed_dict
 
 
 def __generate_depot_points(num_points, point_range):
