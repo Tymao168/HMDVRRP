@@ -7,7 +7,7 @@ This repository contains the computational code, benchmark instances, and paper 
 - **Title:** Bidirectional collaborative routing: synchronizing en-route transfers and robot-assisted delivery in heterogeneous multi-depot systems
 - **Authors:** Tianyu Mao and Mingrui Yang (corresponding author)
 
-The accompanying appendix is available as [Appendices.pdf](Appendices.pdf).
+The accompanying appendices are available as [Appendices.pdf](Appendices.pdf).
 
 ## Appendix contents
 
