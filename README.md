@@ -11,15 +11,19 @@ The accompanying appendix is available as [Appendices.pdf](Appendices.pdf).
 
 ## Appendix contents
 
-`Appendices.pdf` is a five-page supplement organized as follows:
+`Appendices.pdf` is a nine-page supplement organized as follows:
 
-- **Appendix A - Benchmark instances and parameter settings**
-  - A.1 defines the benchmark construction and summarizes the instances in Table A1.
-  - A.2 reports the default generation parameters in Table A2.
-  - A.3 reports the ALNS configuration in Table A3.
-- **Appendix B - Detailed computational results**
-  - B.1 gives instance-level results for standard ALNS versus diversity-aware reheating in Table B4.
-  - B.2 gives results for the no-horizontal-collaboration variant in Table B5.
+- **Appendix A - Pseudo-code of ALNS components**
+  - A.1 gives Algorithm A1 for greedy initial solution generation.
+  - A.2 gives Algorithm A2 for the TP chain mechanism used in repair operators, using random repair as the representative case.
+  - A.3 gives Algorithm A3 for depot-wise route matching via the Hungarian algorithm, used to compute similarity in diversity-aware reheating.
+- **Appendix B - Benchmark instances and parameter settings**
+  - B.1 defines the benchmark construction and summarizes the instances in Table B1.
+  - B.2 reports the default instance-generation parameters in Table B2.
+  - B.3 reports the ALNS configuration in Table B3.
+- **Appendix C - Detailed computational results**
+  - C.1 gives instance-level results for standard ALNS versus enhanced ALNS with diversity-aware reheating in Table C4.
+  - C.2 gives results for the no-horizontal-collaboration variant in Table C5.
 
 The appendix labels an instance as `ED-N-K`, where `D` is the number of depots, `N` is the number of customers assigned to each depot, and `K` is the number of trucks at each depot. Each truck is paired with one robot. The JSON files use the corresponding filename format:
 
@@ -79,7 +83,7 @@ Generation is deterministic because `instance_generation/instanceGenerate.py` se
 
 ## Important consistency note
 
-The revised appendix defines the number of robot-only customers as `ceil(0.3 * D * N)`. The current generator code uses `floor(D * N / 3)`. These expressions differ for some instance sizes, such as `D=2, N=4`. The code was reorganized without changing this experimental behavior; align the formula before regenerating the appendix benchmark set if exact reproduction of Table A1 is required.
+The revised appendix defines the number of robot-only customers as `ceil(0.3 * D * N)`. The current generator code uses `floor(D * N / 3)`. These expressions differ for some instance sizes, such as `D=2, N=4`. The code was reorganized without changing this experimental behavior; align the formula before regenerating the appendix benchmark set if exact reproduction of Table B1 is required.
 
 ## Other bundled files
 
